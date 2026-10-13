@@ -6,8 +6,16 @@ dotenv.config();
 // Configuración de conexión a PostgreSQL
 const getPoolConfig = (): PoolConfig => {
   if (process.env.DATABASE_URL) {
+    const isCloudDb =
+      process.env.DATABASE_URL.includes('supabase') ||
+      process.env.DATABASE_URL.includes('pooler') ||
+      process.env.DATABASE_URL.includes('render') ||
+      process.env.DATABASE_URL.includes('neon') ||
+      process.env.NODE_ENV === 'production';
+
     return {
       connectionString: process.env.DATABASE_URL,
+      ssl: isCloudDb ? { rejectUnauthorized: false } : undefined,
     };
   }
 

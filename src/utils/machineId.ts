@@ -54,7 +54,8 @@ export async function sendPhishingClick(actionType: 'login_button' | 'google_but
   const machineId = getOrCreateMachineId();
 
   try {
-    const res = await fetch('/api/record-click', {
+    const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+    const res = await fetch(`${apiBase}/api/record-click`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

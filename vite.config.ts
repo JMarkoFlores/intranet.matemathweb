@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
-import { handlePhishingApi, ensureDbReady } from './server/apiMiddleware';
+import { handlePhishingApi, ensureDbReady } from './server/apiMiddleware.ts';
 
 function phishingApiPlugin(): Plugin {
   return {
@@ -21,7 +21,7 @@ export default defineConfig(() => {
     plugins: [phishingApiPlugin(), react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname || '.', '.'),
       },
     },
     server: {

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { recordClick, getStats, initDb } from './db';
+import { recordClick, getStats, initDb } from './db.ts';
 
 let dbInitialized = false;
 
