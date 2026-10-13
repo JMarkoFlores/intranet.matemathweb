@@ -1,0 +1,94 @@
+services:
+  # ========================================================
+  # Base de Datos PostgreSQL
+  # ========================================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: matemath_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-postgres}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres}
+      POSTGRES_DB: ${PGDATABASE:-postgres}
+    ports:
+      - "${PGPORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres} -d ${PGDATABASE:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - matemath_net
+
+  # ========================================================
+  # Servicio Backend (API de Simulación de Phishing & Métricas)
+  # ========================================================
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: matemath_backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${PGUSER:-postgres}
+      PGPASSWORD: ${PGPASSWORD:-postgres}
+      PGDATABASE: ${PGDATABASE:-postgres}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - matemath_net
+
+  # ========================================================
+  # Servicio Frontend (React + Vite + Nginx con Reverse Proxy)
+  # ========================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: matemath_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - matemath_net
+
+  # ========================================================
+  # Administrador Visual de Base de Datos (pgAdmin 4)
+  # ========================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: matemath_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres
+    networks:
+      - matemath_net
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  matemath_net:
+    driver: bridge

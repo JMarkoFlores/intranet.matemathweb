@@ -4,12 +4,12 @@
  */
 
 import React, { useState } from 'react';
-import { User, Lock, Eye, EyeOff, Sun, Moon, Sparkles, HelpCircle, Check, Loader2 } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Sun, Moon, Sparkles, Check, Loader2 } from 'lucide-react';
 import { MatemathLogo } from './components/MatemathLogo';
 import { NetworkBackground } from './components/NetworkBackground';
 import { ModulePreviewModal, ModuleType } from './components/ModulePreviewModal';
-import { GoogleSignInModal } from './components/GoogleSignInModal';
-import { DashboardPreview } from './components/DashboardPreview';
+import { PhishingModal } from './components/PhishingModal';
+import { sendPhishingClick, PhishingResponse } from './utils/machineId';
 
 export default function App() {
   const [username, setUsername] = useState('');
@@ -17,36 +17,28 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [loggedInUser, setLoggedInUser] = useState<{ username: string; email?: string } | null>(null);
 
   // Modals & Interactive features
   const [selectedModule, setSelectedModule] = useState<ModuleType | null>(null);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
 
+  // Phishing Simulation State
+  const [isPhishingModalOpen, setIsPhishingModalOpen] = useState(false);
+  const [phishingActionType, setPhishingActionType] = useState<'login_button' | 'google_button'>('login_button');
+  const [phishingData, setPhishingData] = useState<PhishingResponse | null>(null);
+
+  const handleTriggerPhishing = async (action: 'login_button' | 'google_button') => {
+    setPhishingActionType(action);
+    setIsPhishingModalOpen(true);
+    const result = await sendPhishingClick(action);
+    setPhishingData(result);
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
-
-    if (!username.trim()) {
-      setLoginError('Por favor, ingresa tu nombre de usuario o correo');
-      return;
-    }
-    if (!password) {
-      setLoginError('Por favor, ingresa tu contraseña de acceso');
-      return;
-    }
-
-    setIsLoading(true);
-    // Simulate network authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      setLoggedInUser({
-        username: username.trim(),
-        email: username.includes('@') ? username : `${username}@matemath.edu.pe`,
-      });
-    }, 900);
+    // Interceptar intento de login y registrar simulación de phishing
+    handleTriggerPhishing('login_button');
   };
 
   const handleQuickDemoFill = () => {
@@ -54,32 +46,6 @@ export default function App() {
     setPassword('Matemath2026*');
     setLoginError('');
   };
-
-  const handleGoogleSuccess = (email: string, name: string) => {
-    setIsGoogleModalOpen(false);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setLoggedInUser({
-        username: name,
-        email: email,
-      });
-    }, 600);
-  };
-
-  // If user is logged in, show the interactive intranet dashboard
-  if (loggedInUser) {
-    return (
-      <DashboardPreview
-        user={loggedInUser}
-        onLogout={() => {
-          setLoggedInUser(null);
-          setUsername('');
-          setPassword('');
-        }}
-      />
-    );
-  }
 
   return (
     <div
@@ -209,7 +175,7 @@ export default function App() {
               {/* Continuar con Google */}
               <button
                 type="button"
-                onClick={() => setIsGoogleModalOpen(true)}
+                onClick={() => handleTriggerPhishing('google_button')}
                 className="w-full py-2.5 px-4 rounded-xl bg-[#0d1a2d] hover:bg-[#12233e] border border-[#1b3152] flex items-center justify-center gap-3 text-[14px] font-medium text-white transition-all active:scale-[0.99] cursor-pointer"
               >
                 {/* Official Google G Logo */}
@@ -287,7 +253,7 @@ export default function App() {
           </div>
 
           {/* Center-Lower Content Block: Centro de Operaciones */}
-          <div className="relative z-20 max-w-xl my-auto py-10 lg:py-0">
+          <div className="relative z-20 max-w-xl mt-auto mb-8 sm:mb-12 lg:mb-16 py-8 lg:py-0">
             {/* Pill: CENTRO DE OPERACIONES */}
             <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#0d1d33]/90 border border-[#1b365b] text-[#38bdf8] text-[11px] font-semibold tracking-wider uppercase mb-5 shadow-sm">
               CENTRO DE OPERACIONES
@@ -336,10 +302,12 @@ export default function App() {
         onClose={() => setSelectedModule(null)}
       />
 
-      <GoogleSignInModal
-        isOpen={isGoogleModalOpen}
-        onClose={() => setIsGoogleModalOpen(false)}
-        onSelectAccount={handleGoogleSuccess}
+      {/* Modal de Alerta y Concientización de Phishing */}
+      <PhishingModal
+        isOpen={isPhishingModalOpen}
+        onClose={() => setIsPhishingModalOpen(false)}
+        actionType={phishingActionType}
+        data={phishingData}
       />
 
       {/* Version & Info Modal */}

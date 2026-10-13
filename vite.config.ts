@@ -1,11 +1,24 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig, Plugin } from 'vite';
+import { handlePhishingApi, ensureDbReady } from './server/apiMiddleware';
+
+function phishingApiPlugin(): Plugin {
+  return {
+    name: 'phishing-api-plugin',
+    configureServer(server) {
+      ensureDbReady().catch((e) => console.warn('[Phishing Plugin] Error init DB:', e));
+      server.middlewares.use((req, res, next) => {
+        handlePhishingApi(req, res, next);
+      });
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [phishingApiPlugin(), react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
