@@ -1,0 +1,6 @@
+{
+  "name": "Matemath Intranet - Acceso",
+  "description": "Portal de acceso seguro al centro de operaciones y gestión académica de Matemath.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
